@@ -1,5 +1,3 @@
-import { Redis } from "@upstash/redis";
-
 export interface IncomingMessage {
   messageId: string;
   from: string;
@@ -8,65 +6,96 @@ export interface IncomingMessage {
   receivedAt: string;
 }
 
-interface MessageStore {
-  saveIncomingMessage(message: IncomingMessage): Promise<void>;
-  getLatestMessage(): Promise<IncomingMessage | null>;
+interface SupabaseMessageRow {
+  id: string;
+  sender: string | null;
+  message: string | null;
+  whatsapp_timestamp: string | null;
+  received_at: string;
 }
 
-const LATEST_MESSAGE_KEY = "whatsapp-tizen-tv-poc:latest-message";
-
-class MemoryMessageStore implements MessageStore {
-  private latestMessage: IncomingMessage | null = null;
-
-  async saveIncomingMessage(message: IncomingMessage): Promise<void> {
-    this.latestMessage = message;
-  }
-
-  async getLatestMessage(): Promise<IncomingMessage | null> {
-    return this.latestMessage;
-  }
+interface SupabaseConfig {
+  url: string;
+  serviceRoleKey: string;
 }
 
-class UpstashMessageStore implements MessageStore {
-  constructor(private readonly redis: Redis) {}
+function getSupabaseConfig(): SupabaseConfig {
+  const url = process.env.SUPABASE_URL?.trim().replace(/\/$/, "");
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 
-  async saveIncomingMessage(message: IncomingMessage): Promise<void> {
-    await this.redis.set(LATEST_MESSAGE_KEY, message);
-  }
-
-  async getLatestMessage(): Promise<IncomingMessage | null> {
-    return this.redis.get<IncomingMessage>(LATEST_MESSAGE_KEY);
-  }
-}
-
-function createMessageStore(): MessageStore {
-  const hasUpstash = Boolean(
-    process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN,
-  );
-
-  if (hasUpstash) {
-    console.log("[STORE] Using Upstash Redis");
-    return new UpstashMessageStore(Redis.fromEnv());
-  }
-
-  if (process.env.VERCEL) {
-    console.warn(
-      "[STORE] Upstash Redis is not configured; incoming messages will not persist reliably on Vercel",
+  if (!url || !serviceRoleKey) {
+    throw new Error(
+      "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be configured for incoming-message storage",
     );
-  } else {
-    console.log("[STORE] Using local in-memory storage");
   }
 
-  return new MemoryMessageStore();
+  return { url, serviceRoleKey };
 }
 
-const messageStore = createMessageStore();
+function supabaseHeaders(serviceRoleKey: string): Record<string, string> {
+  return {
+    apikey: serviceRoleKey,
+    Authorization: `Bearer ${serviceRoleKey}`,
+    "Content-Type": "application/json",
+  };
+}
 
 export async function saveIncomingMessage(message: IncomingMessage): Promise<void> {
-  await messageStore.saveIncomingMessage(message);
+  const config = getSupabaseConfig();
+  const response = await fetch(
+    `${config.url}/rest/v1/whatsapp_messages?on_conflict=id`,
+    {
+      method: "POST",
+      headers: {
+        ...supabaseHeaders(config.serviceRoleKey),
+        Prefer: "resolution=merge-duplicates,return=minimal",
+      },
+      body: JSON.stringify({
+        id: message.messageId,
+        sender: message.from,
+        message: message.text,
+        whatsapp_timestamp: message.timestamp,
+        received_at: message.receivedAt,
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const details = await response.text();
+    throw new Error(`Supabase message upsert failed (${response.status}): ${details}`);
+  }
+
   console.log("[STORE] Incoming message saved");
 }
 
 export async function getLatestMessage(): Promise<IncomingMessage | null> {
-  return messageStore.getLatestMessage();
+  const config = getSupabaseConfig();
+  const query = new URLSearchParams({
+    select: "id,sender,message,whatsapp_timestamp,received_at",
+    order: "received_at.desc",
+    limit: "1",
+  });
+  const response = await fetch(
+    `${config.url}/rest/v1/whatsapp_messages?${query.toString()}`,
+    {
+      headers: supabaseHeaders(config.serviceRoleKey),
+    },
+  );
+
+  if (!response.ok) {
+    const details = await response.text();
+    throw new Error(`Supabase latest-message query failed (${response.status}): ${details}`);
+  }
+
+  const rows = (await response.json()) as SupabaseMessageRow[];
+  const row = rows[0];
+  if (!row) return null;
+
+  return {
+    messageId: row.id,
+    from: row.sender ?? "",
+    text: row.message ?? "",
+    timestamp: row.whatsapp_timestamp ?? "",
+    receivedAt: row.received_at,
+  };
 }

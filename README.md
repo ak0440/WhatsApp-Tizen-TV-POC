@@ -25,7 +25,7 @@ The TV polls `GET /api/messages/latest` every two seconds. No WebSocket is used.
 - The approved `jaspers_market_order_confirmation_v1` template in `en_US`
 - A recipient permitted by the Meta app while it is in development mode
 - A Vercel account for the public HTTPS webhook
-- An Upstash Redis integration connected to the Vercel project for durable incoming-message storage
+- A Supabase project with the `whatsapp_messages` table for durable incoming-message storage
 
 ## Local setup
 
@@ -35,7 +35,7 @@ npm install
 npm run dev
 ```
 
-Open <http://localhost:3000/tv.html>. Local development uses an in-memory latest-message store unless Upstash variables are provided.
+Open <http://localhost:3000/tv.html>. Add the Supabase variables to `.env` to store and retrieve incoming messages.
 
 ### Local outgoing test
 
@@ -56,13 +56,13 @@ WHATSAPP_API_VERSION=v25.0
 
 WHATSAPP_VERIFY_TOKEN=
 
-UPSTASH_REDIS_REST_URL=
-UPSTASH_REDIS_REST_TOKEN=
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
 
 PORT=3000
 ```
 
-`WHATSAPP_VERIFY_TOKEN` is a random secret you create. It is not the Meta access token. The Upstash variables are optional locally but required for reliable persistence across Vercel function instances.
+`WHATSAPP_VERIFY_TOKEN` is a random secret you create. It is not the Meta access token. The Supabase service-role key is backend-only and must never be exposed to browser JavaScript.
 
 ## Deploy to Vercel
 
@@ -74,14 +74,14 @@ PORT=3000
    - `WHATSAPP_BUSINESS_ACCOUNT_ID`
    - `WHATSAPP_API_VERSION` (`v25.0`)
    - `WHATSAPP_VERIFY_TOKEN` (a random secret you create)
-4. In the project, open **Storage**, create/connect **Upstash for Redis**, and ensure the integration supplies `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`.
+4. Create the `whatsapp_messages` table in Supabase, then add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to the Vercel project.
 5. Redeploy after adding all environment variables and storage.
 6. Verify:
    - `https://MY-APP.vercel.app/tv.html`
    - `https://MY-APP.vercel.app/api/health`
    - `https://MY-APP.vercel.app/api/messages/latest`
 
-Without Upstash, the app falls back to memory and incoming messages are not guaranteed to persist or be visible across Vercel instances.
+Supabase provides persistent storage shared by all Vercel function instances.
 
 ## Configure the Meta webhook
 
@@ -102,7 +102,7 @@ The verification request calls `GET /api/webhook`; incoming events call `POST /a
 1. Keep `https://MY-APP.vercel.app/tv.html` open.
 2. Send a WhatsApp message or reply from the registered test mobile.
 3. Meta sends the event to `/api/webhook`.
-4. The backend stores the latest incoming text message in Upstash Redis.
+4. The backend stores the incoming text message in Supabase Postgres.
 5. The TV calls `/api/messages/latest` every two seconds.
 6. Within approximately two seconds, a TV-style WhatsApp notification appears.
 7. Select **Dismiss**. Polling the same message ID will not show it again; a new WhatsApp message will.
