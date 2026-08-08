@@ -39,10 +39,17 @@ function getConfig(): WhatsAppConfig {
     throw new Error(`Missing environment variables: ${missing.join(", ")}`);
   }
 
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID!.trim();
+  if (!/^\d+$/.test(phoneNumberId)) {
+    throw new Error(
+      "WHATSAPP_PHONE_NUMBER_ID must be Meta's numeric Phone Number ID, not a display phone number such as +91...",
+    );
+  }
+
   return {
-    accessToken: process.env.WHATSAPP_ACCESS_TOKEN!,
-    phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID!,
-    businessAccountId: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID!,
+    accessToken: process.env.WHATSAPP_ACCESS_TOKEN!.trim(),
+    phoneNumberId,
+    businessAccountId: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID!.trim(),
     apiVersion: process.env.WHATSAPP_API_VERSION?.trim() || "v25.0",
   };
 }
@@ -73,6 +80,7 @@ export async function sendTemplate(input: SendTemplateInput): Promise<string> {
   const config = getConfig();
   const endpoint = `https://graph.facebook.com/${encodeURIComponent(config.apiVersion)}/${encodeURIComponent(config.phoneNumberId)}/messages`;
 
+  console.log(`[WHATSAPP] Phone Number ID configuration validated (${config.phoneNumberId.length} digits)`);
   console.log(`[WHATSAPP] Sending message to ${input.to}`);
 
   const response = await fetch(endpoint, {
