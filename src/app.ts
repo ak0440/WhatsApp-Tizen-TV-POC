@@ -43,6 +43,10 @@ app.get("/privacy", (_request: Request, response: Response) => {
   response.sendFile(path.join(publicDirectory, "privacy.html"));
 });
 
+app.get("/favicon.ico", (_request: Request, response: Response) => {
+  response.redirect(301, "/favicon.svg");
+});
+
 app.get("/api/health", (_request: Request, response: Response) => {
   response.json({ status: "ok" });
 });
