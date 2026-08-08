@@ -5,6 +5,12 @@ const incomingNotification = document.querySelector("#incoming-notification");
 const incomingFrom = document.querySelector("#incoming-from");
 const incomingText = document.querySelector("#incoming-text");
 const dismissNotification = document.querySelector("#dismiss-notification");
+const latestWaiting = document.querySelector("#latest-waiting");
+const latestMessage = document.querySelector("#latest-message");
+const latestFrom = document.querySelector("#latest-from");
+const latestText = document.querySelector("#latest-text");
+const latestReceived = document.querySelector("#latest-received");
+const latestMessageId = document.querySelector("#latest-message-id");
 let lastDisplayedMessageId = null;
 
 form.addEventListener("submit", async (event) => {
@@ -29,7 +35,7 @@ form.addEventListener("submit", async (event) => {
     }
 
     statusElement.className = "status success";
-    statusElement.textContent = "✓ WhatsApp message sent";
+    statusElement.textContent = "WhatsApp sent successfully";
     console.log("WhatsApp message ID:", result.messageId);
   } catch (error) {
     console.error("WhatsApp send error:", error);
@@ -44,13 +50,29 @@ function formatPhoneNumber(phoneNumber) {
   return phoneNumber.startsWith("+") ? phoneNumber : `+${phoneNumber}`;
 }
 
+function formatReceivedTime(message) {
+  const value = message.receivedAt || (message.timestamp ? Number(message.timestamp) * 1000 : null);
+  if (!value) return "Unknown";
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "Unknown" : date.toLocaleTimeString();
+}
+
 function displayIncomingMessage(message) {
   if (!message?.messageId || message.messageId === lastDisplayedMessageId) {
     return false;
   }
 
   lastDisplayedMessageId = message.messageId;
-  incomingFrom.textContent = formatPhoneNumber(message.from);
+  const formattedFrom = formatPhoneNumber(message.from);
+  latestFrom.textContent = formattedFrom;
+  latestText.textContent = message.text;
+  latestReceived.textContent = formatReceivedTime(message);
+  latestMessageId.textContent = message.messageId;
+  latestWaiting.hidden = true;
+  latestMessage.hidden = false;
+
+  incomingFrom.textContent = formattedFrom;
   incomingText.textContent = message.text;
   incomingNotification.hidden = false;
   return true;

@@ -3,52 +3,67 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WhatsApp Tizen TV POC</title>
+    <title>WhatsApp ↔ TV POC Dashboard</title>
     <link rel="stylesheet" href="/style.css" />
     <script src="/tv.js" defer></script>
   </head>
   <body>
-    <main class="tv" aria-label="Samsung TV simulator">
+    <main class="tv" aria-label="WhatsApp and TV developer dashboard">
       <div class="ambient ambient-one"></div>
       <div class="ambient ambient-two"></div>
+
       <header class="tv-header">
-        <span class="brand">SAMSUNG TV</span>
-        <span class="live"><i></i> LIVE</span>
+        <div>
+          <span class="brand">SAMSUNG TV</span>
+          <h1>WhatsApp ↔ TV</h1>
+          <p>Two-way integration dashboard</p>
+        </div>
+        <span class="live"><i></i> POC ONLINE</span>
       </header>
 
-      <section class="content">
-        <p class="eyebrow">NOW PLAYING</p>
-        <h1>Night Drive</h1>
-        <p class="description">City stories, after dark</p>
-        <div class="progress"><span></span></div>
-        <p class="time">22:18&nbsp;&nbsp; / &nbsp;&nbsp;48:00</p>
-      </section>
-
-      <aside class="action-panel">
-        <div class="panel-title">
-          <span class="whatsapp-mark">☎</span>
-          <div><small>QUICK ACTION</small><h2>Send WhatsApp Message</h2></div>
-        </div>
-
-        <form id="send-form">
-          <label>Phone<input name="to" value="919818999197" inputmode="numeric" required /></label>
-          <label>Name<input name="customerName" value="John Doe" required /></label>
-          <div class="row">
-            <label>Order<input name="orderNumber" value="123456" required /></label>
-            <label>Date<input name="date" value="Aug 8, 2026" required /></label>
+      <div class="dashboard">
+        <section class="panel send-panel">
+          <div class="panel-title">
+            <span class="direction-badge">→</span>
+            <div><small>TV TO PHONE</small><h2>Send to WhatsApp</h2></div>
           </div>
-          <button type="submit">Send WhatsApp <span>→</span></button>
-          <p id="status" class="status" role="status" aria-live="polite"></p>
-        </form>
-      </aside>
+
+          <form id="send-form">
+            <label>Destination WhatsApp number<input name="to" value="919818999197" inputmode="numeric" required /></label>
+            <label>Customer name<input name="customerName" value="John Doe" required /></label>
+            <div class="row">
+              <label>Order number<input name="orderNumber" value="123456" required /></label>
+              <label>Date<input name="date" value="Aug 8, 2026" required /></label>
+            </div>
+            <button type="submit">Send WhatsApp <span>→</span></button>
+            <p id="status" class="status" role="status" aria-live="polite"></p>
+          </form>
+        </section>
+
+        <section class="panel latest-panel">
+          <div class="panel-title">
+            <span class="direction-badge incoming-badge">←</span>
+            <div><small>PHONE TO TV</small><h2>Latest Message From WhatsApp</h2></div>
+          </div>
+
+          <div id="latest-waiting" class="waiting-state">
+            <span class="waiting-dot"></span>
+            <p>Waiting for WhatsApp message...</p>
+          </div>
+
+          <dl id="latest-message" class="message-details" hidden>
+            <div><dt>From</dt><dd id="latest-from"></dd></div>
+            <div><dt>Message</dt><dd id="latest-text" class="latest-text"></dd></div>
+            <div><dt>Received</dt><dd id="latest-received"></dd></div>
+            <div class="message-id-row"><dt>Message ID</dt><dd id="latest-message-id"></dd></div>
+          </dl>
+        </section>
+      </div>
 
       <section id="incoming-notification" class="incoming-notification" aria-live="polite" hidden>
         <div class="notification-heading">
           <span class="notification-icon">W</span>
-          <div>
-            <small>INCOMING MESSAGE</small>
-            <h2>WhatsApp</h2>
-          </div>
+          <div><small>NEW MESSAGE</small><h2>WhatsApp</h2></div>
           <span class="notification-time">NOW</span>
         </div>
         <p id="incoming-from" class="incoming-from"></p>
@@ -56,7 +71,10 @@
         <button id="dismiss-notification" class="dismiss-button" type="button">Dismiss</button>
       </section>
 
-      <footer>TV Simulator · Two-Way POC</footer>
+      <footer class="poc-flow">
+        <span>TV <b>→</b> Vercel <b>→</b> Meta <b>→</b> WhatsApp</span>
+        <span>WhatsApp <b>→</b> Meta <b>→</b> Webhook <b>→</b> Vercel <b>→</b> TV</span>
+      </footer>
     </main>
   </body>
 </html>
