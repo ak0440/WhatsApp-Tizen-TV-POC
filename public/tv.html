@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WhatsApp Tizen TV POC</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/tv.js" defer></script>
+  </head>
+  <body>
+    <main class="tv" aria-label="Samsung TV simulator">
+      <div class="ambient ambient-one"></div>
+      <div class="ambient ambient-two"></div>
+      <header class="tv-header">
+        <span class="brand">SAMSUNG TV</span>
+        <span class="live"><i></i> LIVE</span>
+      </header>
+
+      <section class="content">
+        <p class="eyebrow">NOW PLAYING</p>
+        <h1>Night Drive</h1>
+        <p class="description">City stories, after dark</p>
+        <div class="progress"><span></span></div>
+        <p class="time">22:18&nbsp;&nbsp; / &nbsp;&nbsp;48:00</p>
+      </section>
+
+      <aside class="action-panel">
+        <div class="panel-title">
+          <span class="whatsapp-mark">☎</span>
+          <div><small>QUICK ACTION</small><h2>Send WhatsApp Message</h2></div>
+        </div>
+
+        <form id="send-form">
+          <label>Phone<input name="to" value="919818999197" inputmode="numeric" required /></label>
+          <label>Name<input name="customerName" value="John Doe" required /></label>
+          <div class="row">
+            <label>Order<input name="orderNumber" value="123456" required /></label>
+            <label>Date<input name="date" value="Aug 8, 2026" required /></label>
+          </div>
+          <button type="submit">Send WhatsApp <span>→</span></button>
+          <p id="status" class="status" role="status" aria-live="polite"></p>
+        </form>
+      </aside>
+
+      <footer>TV Simulator · Level 1 POC</footer>
+    </main>
+  </body>
+</html>

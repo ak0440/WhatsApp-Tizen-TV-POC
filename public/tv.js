@@ -1,0 +1,36 @@
+const form = document.querySelector("#send-form");
+const statusElement = document.querySelector("#status");
+const button = form.querySelector("button");
+
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  button.disabled = true;
+  statusElement.className = "status sending";
+  statusElement.textContent = "Sending...";
+
+  const data = Object.fromEntries(new FormData(form).entries());
+
+  try {
+    const response = await fetch("/api/whatsapp/send-template", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      console.error("WhatsApp send failed:", result);
+      throw new Error(result.error || "Request failed");
+    }
+
+    statusElement.className = "status success";
+    statusElement.textContent = "✓ WhatsApp message sent";
+    console.log("WhatsApp message ID:", result.messageId);
+  } catch (error) {
+    console.error("WhatsApp send error:", error);
+    statusElement.className = "status error";
+    statusElement.textContent = "Failed to send message";
+  } finally {
+    button.disabled = false;
+  }
+});
