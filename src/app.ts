@@ -39,6 +39,10 @@ app.get("/", (_request: Request, response: Response) => {
   response.redirect("/tv.html");
 });
 
+app.get("/privacy", (_request: Request, response: Response) => {
+  response.sendFile(path.join(publicDirectory, "privacy.html"));
+});
+
 app.get("/api/health", (_request: Request, response: Response) => {
   response.json({ status: "ok" });
 });
