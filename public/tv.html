@@ -42,7 +42,21 @@
         </form>
       </aside>
 
-      <footer>TV Simulator · Level 1 POC</footer>
+      <section id="incoming-notification" class="incoming-notification" aria-live="polite" hidden>
+        <div class="notification-heading">
+          <span class="notification-icon">W</span>
+          <div>
+            <small>INCOMING MESSAGE</small>
+            <h2>WhatsApp</h2>
+          </div>
+          <span class="notification-time">NOW</span>
+        </div>
+        <p id="incoming-from" class="incoming-from"></p>
+        <p id="incoming-text" class="incoming-text"></p>
+        <button id="dismiss-notification" class="dismiss-button" type="button">Dismiss</button>
+      </section>
+
+      <footer>TV Simulator · Two-Way POC</footer>
     </main>
   </body>
 </html>

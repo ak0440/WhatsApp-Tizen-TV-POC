@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Local Samsung/Tizen TV simulator POC for sending WhatsApp templates through Meta Cloud API.",
+  "description": "Two-way Samsung/Tizen TV simulator POC using Meta WhatsApp Cloud API webhooks.",
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
@@ -14,6 +14,7 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@upstash/redis": "^1.38.2",
     "dotenv": "^17.2.1",
     "express": "^5.1.0"
   },
