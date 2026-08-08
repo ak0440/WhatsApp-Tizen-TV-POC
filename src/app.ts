@@ -35,6 +35,10 @@ const publicDirectory = path.resolve(currentDirectory, "../public");
 app.use(express.json({ limit: "100kb" }));
 app.use(express.static(publicDirectory));
 
+app.get("/", (_request: Request, response: Response) => {
+  response.redirect("/tv.html");
+});
+
 app.get("/api/health", (_request: Request, response: Response) => {
   response.json({ status: "ok" });
 });
@@ -153,3 +157,5 @@ app.post("/api/whatsapp/send-template", async (request: Request, response: Respo
     response.status(502).json({ success: false, error: "Meta API request failed" });
   }
 });
+
+export default app;
