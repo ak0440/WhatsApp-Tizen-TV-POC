@@ -13,8 +13,10 @@ import {
 } from "./whatsapp.js";
 
 interface MetaWebhookPayload {
+  object?: string;
   entry?: Array<{
     changes?: Array<{
+      field?: string;
       value?: {
         messages?: Array<{
           id?: string;
@@ -23,6 +25,8 @@ interface MetaWebhookPayload {
           type?: string;
           text?: { body?: string };
         }>;
+        statuses?: unknown[];
+        contacts?: unknown[];
       };
     }>;
   }>;
@@ -75,19 +79,57 @@ app.get("/api/webhook", (request: Request, response: Response) => {
 app.post("/api/webhook", async (request: Request, response: Response) => {
   try {
     const payload = request.body as MetaWebhookPayload;
+    console.log("[WEBHOOK] received");
+    console.log(`object: ${payload.object ?? "unknown"}`);
+
+    let changeCount = 0;
     const messages =
       payload.entry?.flatMap((entry) =>
-        entry.changes?.flatMap((change) => change.value?.messages ?? []) ?? [],
+        entry.changes?.flatMap((change) => {
+          changeCount += 1;
+          const value = change.value;
+          const hasMessages = Array.isArray(value?.messages);
+          const messageCount = hasMessages ? value.messages!.length : 0;
+          const firstMessage = hasMessages ? value.messages![0] : undefined;
+
+          console.log(`field: ${change.field ?? "unknown"}`);
+          console.log(`has value.messages: ${hasMessages}`);
+          console.log(`message count: ${messageCount}`);
+          console.log(`message type: ${firstMessage?.type ?? "none"}`);
+          console.log(`has text.body: ${typeof firstMessage?.text?.body === "string"}`);
+          console.log(`has statuses: ${Array.isArray(value?.statuses)}`);
+          console.log(`has contacts: ${Array.isArray(value?.contacts)}`);
+
+          if (!hasMessages) {
+            console.log("[WEBHOOK] Ignored: no messages array");
+          }
+
+          return value?.messages ?? [];
+        }) ?? [],
       ) ?? [];
 
+    if (changeCount === 0) {
+      console.log("[WEBHOOK] Ignored: no messages array");
+    }
+
     for (const message of messages) {
+      console.log(`message id: ${message.id ?? "missing"}`);
+      console.log(`from: ${message.from ?? "missing"}`);
+      console.log(`type: ${message.type ?? "missing"}`);
+      console.log(`text body: ${message.text?.body ?? "missing"}`);
+
+      if (message.type !== "text") {
+        console.log(`[WEBHOOK] Ignored: unsupported message type ${message.type ?? "missing"}`);
+        continue;
+      }
+
       if (
-        message.type !== "text" ||
         !message.id ||
         !message.from ||
         !message.timestamp ||
         typeof message.text?.body !== "string"
       ) {
+        console.log("[WEBHOOK] Ignored: incomplete text message");
         continue;
       }
 
