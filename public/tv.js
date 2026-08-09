@@ -11,7 +11,11 @@ const latestFrom = document.querySelector("#latest-from");
 const latestText = document.querySelector("#latest-text");
 const latestReceived = document.querySelector("#latest-received");
 const latestMessageId = document.querySelector("#latest-message-id");
-let lastDisplayedMessageId = null;
+const POLL_INTERVAL_MS = 5000;
+let lastMessageId = null;
+let initialPollComplete = false;
+let pollInProgress = false;
+let pollTimer = null;
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -58,12 +62,7 @@ function formatReceivedTime(message) {
   return Number.isNaN(date.getTime()) ? "Unknown" : date.toLocaleTimeString();
 }
 
-function displayIncomingMessage(message) {
-  if (!message?.messageId || message.messageId === lastDisplayedMessageId) {
-    return false;
-  }
-
-  lastDisplayedMessageId = message.messageId;
+function updateLatestMessageSection(message) {
   const formattedFrom = formatPhoneNumber(message.from);
   latestFrom.textContent = formattedFrom;
   latestText.textContent = message.text;
@@ -71,14 +70,45 @@ function displayIncomingMessage(message) {
   latestMessageId.textContent = message.messageId;
   latestWaiting.hidden = true;
   latestMessage.hidden = false;
+}
+
+function showIncomingNotification(message) {
+  const formattedFrom = formatPhoneNumber(message.from);
 
   incomingFrom.textContent = formattedFrom;
   incomingText.textContent = message.text;
   incomingNotification.hidden = false;
+}
+
+function processLatestMessage(message) {
+  if (!message?.messageId) {
+    return false;
+  }
+
+  updateLatestMessageSection(message);
+
+  if (!initialPollComplete) {
+    lastMessageId = message.messageId;
+    initialPollComplete = true;
+    return false;
+  }
+
+  if (message.messageId === lastMessageId) {
+    return false;
+  }
+
+  lastMessageId = message.messageId;
+  showIncomingNotification(message);
   return true;
 }
 
 async function pollLatestMessage() {
+  if (pollInProgress || document.visibilityState === "hidden") {
+    return;
+  }
+
+  pollInProgress = true;
+
   try {
     const response = await fetch("/api/messages/latest", { cache: "no-store" });
     const result = await response.json();
@@ -87,17 +117,52 @@ async function pollLatestMessage() {
       throw new Error(result.error || "Latest message request failed");
     }
 
+    if (document.visibilityState === "hidden") {
+      return;
+    }
+
     if (result.message) {
-      displayIncomingMessage(result.message);
+      processLatestMessage(result.message);
+    } else if (!initialPollComplete) {
+      initialPollComplete = true;
     }
   } catch (error) {
     console.error("Incoming message polling failed:", error);
+  } finally {
+    pollInProgress = false;
   }
+}
+
+function startPolling() {
+  if (pollTimer !== null || document.visibilityState === "hidden") {
+    return;
+  }
+
+  pollTimer = setInterval(pollLatestMessage, POLL_INTERVAL_MS);
+}
+
+function stopPolling() {
+  if (pollTimer === null) {
+    return;
+  }
+
+  clearInterval(pollTimer);
+  pollTimer = null;
 }
 
 dismissNotification.addEventListener("click", () => {
   incomingNotification.hidden = true;
 });
 
-pollLatestMessage();
-setInterval(pollLatestMessage, 2000);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") {
+    stopPolling();
+    return;
+  }
+
+  void pollLatestMessage();
+  startPolling();
+});
+
+void pollLatestMessage();
+startPolling();
