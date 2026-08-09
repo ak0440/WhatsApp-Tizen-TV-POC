@@ -7,8 +7,10 @@ import {
   type IncomingMessage,
 } from "./messageStore.js";
 import {
+  sendText,
   sendTemplate,
   WhatsAppApiError,
+  type SendTextInput,
   type SendTemplateInput,
 } from "./whatsapp.js";
 
@@ -194,6 +196,41 @@ app.post("/api/whatsapp/send-template", async (request: Request, response: Respo
 
   try {
     const messageId = await sendTemplate(input);
+    response.json({ success: true, messageId });
+  } catch (error) {
+    console.error("[WHATSAPP] Meta API failed");
+    if (error instanceof WhatsAppApiError) {
+      console.error(`Status: ${error.status}`);
+      console.error("Error:", error.details);
+    } else {
+      console.error("Status: unavailable");
+      console.error("Error:", error instanceof Error ? error.message : error);
+    }
+    response.status(502).json({ success: false, error: "Meta API request failed" });
+  }
+});
+
+app.post("/api/whatsapp/send-text", async (request: Request, response: Response) => {
+  const fields: Array<keyof SendTextInput> = ["to", "message"];
+  const missing = fields.filter(
+    (field) => typeof request.body?.[field] !== "string" || !request.body[field].trim(),
+  );
+
+  if (missing.length > 0) {
+    response.status(400).json({
+      success: false,
+      error: `Missing required fields: ${missing.join(", ")}`,
+    });
+    return;
+  }
+
+  const input: SendTextInput = {
+    to: request.body.to.trim(),
+    message: request.body.message.trim(),
+  };
+
+  try {
+    const messageId = await sendText(input);
     response.json({ success: true, messageId });
   } catch (error) {
     console.error("[WHATSAPP] Meta API failed");

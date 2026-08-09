@@ -5,6 +5,11 @@ export interface SendTemplateInput {
   date: string;
 }
 
+export interface SendTextInput {
+  to: string;
+  message: string;
+}
+
 interface WhatsAppConfig {
   accessToken: string;
   phoneNumberId: string;
@@ -76,6 +81,17 @@ export function buildTemplatePayload(input: SendTemplateInput) {
   };
 }
 
+export function buildTextPayload(input: SendTextInput) {
+  return {
+    messaging_product: "whatsapp",
+    to: input.to,
+    type: "text",
+    text: {
+      body: input.message,
+    },
+  };
+}
+
 export async function sendTemplate(input: SendTemplateInput): Promise<string> {
   const config = getConfig();
   const endpoint = `https://graph.facebook.com/${encodeURIComponent(config.apiVersion)}/${encodeURIComponent(config.phoneNumberId)}/messages`;
@@ -90,6 +106,38 @@ export async function sendTemplate(input: SendTemplateInput): Promise<string> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(buildTemplatePayload(input)),
+  });
+
+  const responseBody: unknown = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new WhatsAppApiError("Meta API request failed", response.status, responseBody);
+  }
+
+  const messageId = (responseBody as MetaSuccessResponse | null)?.messages?.[0]?.id;
+  if (!messageId) {
+    throw new WhatsAppApiError("Meta API returned no message ID", response.status, responseBody);
+  }
+
+  console.log("[WHATSAPP] Meta API success");
+  console.log(`Message ID: ${messageId}`);
+  return messageId;
+}
+
+export async function sendText(input: SendTextInput): Promise<string> {
+  const config = getConfig();
+  const endpoint = `https://graph.facebook.com/${encodeURIComponent(config.apiVersion)}/${encodeURIComponent(config.phoneNumberId)}/messages`;
+
+  console.log(`[WHATSAPP] Phone Number ID configuration validated (${config.phoneNumberId.length} digits)`);
+  console.log(`[WHATSAPP] Sending text message to ${input.to}`);
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${config.accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(buildTextPayload(input)),
   });
 
   const responseBody: unknown = await response.json().catch(() => null);

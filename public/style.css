@@ -21,8 +21,9 @@ body { margin: 0; min-height: 100vh; display: grid; place-items: center; backgro
 .panel-title h2 { margin: .25em 0 0; font-size: clamp(14px, 1.45vw, 23px); font-weight: 500; }
 form { display: grid; gap: clamp(7px, .75vw, 12px); }
 label { display: grid; gap: .4em; color: #9ba7b2; font-size: clamp(8px, .65vw, 11px); letter-spacing: .04em; }
-input { width: 100%; border: 1px solid rgba(255,255,255,.14); border-radius: 7px; padding: clamp(7px, .72vw, 12px); outline: none; background: rgba(255,255,255,.06); color: white; font: inherit; font-size: clamp(10px, .9vw, 15px); }
-input:focus { border-color: #25d366; box-shadow: 0 0 0 2px rgba(37,211,102,.15); }
+input, textarea { width: 100%; border: 1px solid rgba(255,255,255,.14); border-radius: 7px; padding: clamp(7px, .72vw, 12px); outline: none; background: rgba(255,255,255,.06); color: white; font: inherit; font-size: clamp(10px, .9vw, 15px); }
+textarea { resize: none; line-height: 1.4; }
+input:focus, textarea:focus { border-color: #25d366; box-shadow: 0 0 0 2px rgba(37,211,102,.15); }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 3%; }
 button { border: 0; border-radius: 8px; padding: clamp(9px, .85vw, 14px); cursor: pointer; font: inherit; font-size: clamp(10px, .9vw, 15px); font-weight: 700; }
 form button { margin-top: 1%; display: flex; justify-content: center; gap: 8%; background: #25d366; color: #05260f; }
